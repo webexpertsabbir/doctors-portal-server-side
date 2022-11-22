@@ -25,8 +25,20 @@ async function run() {
             const date = req.query.date;
             console.log(date)
             const query = {};
-            const option = await appointmentOptionCallection.find(query).toArray();
-            res.send(option)
+            const options = await appointmentOptionCallection.find(query).toArray();
+            const bookingQuery = {appointment: date}
+            const alreadyBooked = await bookingCollection.find(bookingQuery).toArray();
+            options.forEach(option => {
+                const optionBooked = alreadyBooked.filter(book => book.treatment === option.name);
+                const bookSlots = optionBooked.map(book => book.slot)
+                const remainingSlots = option.slots.filter(slot => !bookSlots.includes(slot))
+
+                option.slots = remainingSlots;
+
+                // console.log(date, option.name, bookSlots, remainingSlots.length)
+
+            })
+            res.send(options)
         })
 
         app.post('/booking', async(req, res) =>{
@@ -35,6 +47,7 @@ async function run() {
             const result = await bookingCollection.insertOne(booking);
             res.send(result);
         })
+
     }
     finally{
 
